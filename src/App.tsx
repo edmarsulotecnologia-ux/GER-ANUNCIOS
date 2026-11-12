@@ -4,7 +4,6 @@
  */
 
 import { useState, useRef } from "react";
-import { GoogleGenAI } from "@google/genai";
 import { 
   Upload, 
   Sparkles, 
@@ -46,38 +45,20 @@ export default function App() {
 
     setLoading(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const model = "gemini-3-flash-preview";
-      
-      const base64Data = image.split(",")[1];
-      const mimeType = image.split(";")[0].split(":")[1];
-
-      const response = await ai.models.generateContent({
-        model,
-        contents: [
-          {
-            parts: [
-              { text: `Você é um Especialista Sênior em Copywriting para E-commerce e SEO de Marketplaces (Mercado Livre, Shopee e Amazon). Sua missão é transformar fotos ou descrições simples em anúncios de alta conversão.
-
-Ao receber um input (foto ou texto), siga rigorosamente esta estrutura:
-
-1. TÍTULO SEO (Máximo 60 caracteres): Use a fórmula [Produto] + [Marca] + [Modelo] + [Característica Principal]. Evite termos genéricos como "Lindo" ou "Promoção".
-2. LISTA DE BENEFÍCIOS (Bullets): Liste 5 pontos fortes focados na dor do cliente (ex: "Não amassa", "Bateria dura 24h").
-3. DESCRIÇÃO AIDA: 
-   - ATENÇÃO: Uma frase impactante sobre o problema que o produto resolve.
-   - INTERESSE: Detalhes técnicos e diferenciais.
-   - DESEJO: Como o cliente se sentirá ao usar o produto.
-   - AÇÃO: Chamada para compra imediata.
-4. TAGS DE BUSCA: 10 palavras-chave separadas por vírgula que os clientes usariam para achar esse item.
-
-Dê sugestões de tom de voz (Ex: Formal para eletrônicos, Casual para moda). Escreva em Português do Brasil.` },
-              { inlineData: { data: base64Data, mimeType } }
-            ]
-          }
-        ],
+      const response = await fetch("/api/generate-ad", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image }),
       });
 
-      setAdContent(response.text || "Não foi possível gerar o anúncio.");
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
+      const data = (await response.json()) as { text?: string };
+      setAdContent(data.text || "Não foi possível gerar o anúncio.");
     } catch (error) {
       console.error("Erro ao gerar anúncio:", error);
       setAdContent("Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.");
